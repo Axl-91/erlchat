@@ -1,7 +1,5 @@
 # erlchat
 
-=====
-
 An OTP application
 
 Build
