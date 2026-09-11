@@ -2,15 +2,32 @@
 -export([init/1]).
 
 init(Sock) ->
+    inet:setopts(Sock, [{active, once}]),
     gen_tcp:send(Sock, "Welcome to erlChat!\r\n"),
-    loop(Sock).
+    gen_tcp:send(Sock, "Nick: "),
+    await_nick(Sock).
 
-loop(Sock) ->
-    case gen_tcp:recv(Sock, 0) of
-        {ok, Data} when is_binary(Data) ->
-            gen_tcp:send(Sock, Data), % echo
-            loop(Sock);
-        {error, closed} ->
-            io:format("Client has been disconnected~n"),
+await_nick(Sock) ->
+    receive
+        {tcp, Sock, Data} when is_binary(Data) ->
+            Nick = string:trim(Data),
+            erlchat_room:join(self(), Nick),
+            inet:setopts(Sock, [{active, once}]),
+            loop(Sock, Nick);
+        {tcp_closed, Sock} ->
             ok
+    end.
+
+loop(Sock, Nick) ->
+    receive
+        {tcp, Sock, Data} when is_binary(Data) ->
+            erlchat_room:broadcast(self(), Data),
+            inet:setopts(Sock, [{active, once}]),
+            loop(Sock, Nick);
+        {tcp_closed, Sock} ->
+            io:format("Client ~p disconnected~n", [Nick]),
+            ok;
+        {chat_msg, Msg} ->
+            gen_tcp:send(Sock, Msg),
+            loop(Sock, Nick)
     end.

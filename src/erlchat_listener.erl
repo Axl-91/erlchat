@@ -17,5 +17,6 @@ init(Port) ->
 
 accept_loop(LSock) ->
     {ok, Sock} = gen_tcp:accept(LSock),
-    spawn(fun() -> erlchat_client:init(Sock) end),
+    Pid = spawn(fun() -> erlchat_client:init(Sock) end),
+    gen_tcp:controlling_process(Sock, Pid),
     accept_loop(LSock).

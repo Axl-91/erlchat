@@ -1,9 +1,5 @@
-%%%-------------------------------------------------------------------
-%% @doc erlchat top level supervisor.
-%% @end
-%%%-------------------------------------------------------------------
-
 -module(erlchat_sup).
+-moduledoc "erlchat top level supervisor.".
 
 -behaviour(supervisor).
 
@@ -19,15 +15,17 @@ start_link() ->
 init([]) ->
     SupFlags = #{
         strategy => one_for_all,
-        intensity => 0,
-        period => 1
+        intensity => 5,
+        period => 10
     },
     ChildSpecs = [
-        #{
-            id => erlchat_listener,
-            start => {erlchat_listener, start_link, [4000]},
-            restart => permanent
-         }
+        #{id => erlchat_room,
+          start => {erlchat_room, start_link, []},
+          restart => permanent},
+
+        #{id => erlchat_listener,
+          start => {erlchat_listener, start_link, [4000]},
+          restart => permanent}
     ],
     {ok, {SupFlags, ChildSpecs}}.
 
