@@ -13,6 +13,8 @@ await_nick(Sock) ->
             Nick = string:trim(Data),
             erlchat_room:join(self(), Nick),
             inet:setopts(Sock, [{active, once}]),
+            gen_tcp:send(Sock, "\e[2J\e[H"),
+            gen_tcp:send(Sock, "Welcome to the main room\n"),
             loop(Sock, Nick);
         {tcp_closed, Sock} ->
             ok
@@ -25,7 +27,7 @@ loop(Sock, Nick) ->
             inet:setopts(Sock, [{active, once}]),
             loop(Sock, Nick);
         {tcp_closed, Sock} ->
-            io:format("Client ~p disconnected~n", [Nick]),
+            io:format("Client disconnected:  ~s ~n", [Nick]),
             ok;
         {chat_msg, Msg} ->
             gen_tcp:send(Sock, Msg),

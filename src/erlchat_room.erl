@@ -24,7 +24,7 @@ handle_call(_Request, _From, State) ->
     {reply, ok, State}.
 
 handle_cast({join, ClientPid, Nick}, State = #{clients := Clients}) ->
-    io:format("New client connected: ~p ~n", [Nick]),
+    io:format("New client connected: ~s ~n", [Nick]),
     monitor(process, ClientPid),
 
     NewClients = Clients#{ClientPid => Nick},
@@ -32,7 +32,7 @@ handle_cast({join, ClientPid, Nick}, State = #{clients := Clients}) ->
 
 handle_cast({broadcast, FromPid, Msg}, State = #{clients := Clients}) ->
     Nick = maps:get(FromPid, Clients, <<"???">>),
-    Line = <<Nick/binary, ": ", Msg/binary>>,
+    Line = <<"\033[0;31m", Nick/binary, "\033[0m", ": ", Msg/binary>>,
 
     maps:foreach(
         fun(Pid, _Nick) when is_pid(Pid), Pid =/= FromPid ->
