@@ -19,11 +19,12 @@ erlchat_sup
 ├── erlchat_room       (gen_server — tracks Pid => Nick, broadcasts messages)
 └── erlchat_listener   (accepts TCP connections, spawns one process per client)
         └── erlchat_client  (per-connection process, one per connected user)
+```
 
 Each client is its own Erlang process with no shared mutable state. If one
 client crashes or disconnects abruptly, it doesn't affect anyone else — the
 room's monitor detects the death and cleans up automatically.
-```
+
 
 ## Build
 
