@@ -8,7 +8,6 @@ A minimal TCP chat server written in Erlang/OTP. Connect with `nc` (or any raw T
 - Plain TCP sockets (gen_tcp), no telnet negotiation required
 - One lightweight process per connection
 - A central gen_server room that tracks connected clients and broadcasts messages
-- Nicknames — you're asked for one before joining
 - Automatic cleanup on disconnect via process monitors (no manual bookkeeping needed)
 - Supervised: the room and the listener restart automatically on crash
 
