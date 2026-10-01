@@ -15,6 +15,16 @@ join(ClientPid, Nick) ->
 broadcast(FromPid, Msg) ->
     gen_server:cast(?MODULE, {broadcast, FromPid, Msg}).
 
+announce(Clients, Line) ->
+    maps:foreach(
+        fun(Pid, _Nick) when is_pid(Pid) ->
+                Pid ! {chat_msg, Line};
+           (_Pid, _Nick) ->
+                ok
+        end,
+        Clients
+    ).
+
 %% Callbacks
 
 init([]) ->
@@ -26,6 +36,7 @@ handle_call(_Request, _From, State) ->
 handle_cast({join, ClientPid, Nick}, State = #{clients := Clients}) ->
     io:format("New client connected: ~s ~n", [Nick]),
     monitor(process, ClientPid),
+    announce(Clients, <<"--- ", Nick/binary, " has just connected ---\r\n">>),
 
     NewClients = Clients#{ClientPid => Nick},
     {noreply, State#{clients := NewClients}};
@@ -34,19 +45,20 @@ handle_cast({broadcast, FromPid, Msg}, State = #{clients := Clients}) ->
     Nick = maps:get(FromPid, Clients, <<"???">>),
     Line = <<"\033[0;31m", Nick/binary, "\033[0m", ": ", Msg/binary>>,
 
-    maps:foreach(
-        fun(Pid, _Nick) when is_pid(Pid), Pid =/= FromPid ->
-                Pid ! {chat_msg, Line};
-           (_Pid, _Nick) -> ok
-        end,
-        Clients
-    ),
+    OthersClients = maps:remove(FromPid, Clients),
+    announce(OthersClients, Line),
 
     {noreply, State}.
 
 handle_info({'DOWN', _Ref, process, Pid, _Reason}, State = #{clients := Clients}) ->
-    NewClients = sets:del_element(Pid, Clients),
-    {noreply, State#{clients := NewClients}};
+    case maps:get(Pid, Clients, undefined) of
+        undefined ->
+            {noreply, State};
+        Nick ->
+            NewClients = maps:remove(Pid, Clients),
+            announce(Clients, <<"--- ", Nick/binary, " has disconnected ---\r\n">>),
+            {noreply, State#{clients := NewClients}}
+    end;
 
 handle_info(_Msg, State) ->
     {noreply, State}.
