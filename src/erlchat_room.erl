@@ -25,6 +25,10 @@ announce(Clients, Line) ->
         Clients
     ).
 
+timestamp() ->
+    {_, {H, M, _}} = calendar:local_time(),
+    iolist_to_binary(io_lib:format("~2..0w:~2..0w", [H, M])).
+
 %% Callbacks
 
 init([]) ->
@@ -43,7 +47,9 @@ handle_cast({join, ClientPid, Nick}, State = #{clients := Clients}) ->
 
 handle_cast({broadcast, FromPid, Msg}, State = #{clients := Clients}) ->
     Nick = maps:get(FromPid, Clients, <<"???">>),
-    Line = <<"\033[0;31m", Nick/binary, "\033[0m", ": ", Msg/binary>>,
+
+    Timestamp = timestamp(),
+    Line = <<"[", Timestamp/binary, "] \033[0;31m", Nick/binary, "\033[0m: ", Msg/binary>>,
 
     OthersClients = maps:remove(FromPid, Clients),
     announce(OthersClients, Line),
